@@ -1,0 +1,19 @@
+<launch>
+	<arg name="pcap_file"  default="/home/hesai/1.pcap"/>
+	<arg name="server_ip" default=""/>
+	<arg name="server_port"  default="9870"/>
+	<arg name="lidar_recv_port"  default="2368"/>
+	<arg name="gps_port"  default="10110"/>
+	<arg name="channel_count"  default="3"/>
+	<arg name="lidar_correction_file"  default="$(find hesai_gt)/config/correction.csv"/>
+
+	<node pkg="hesai_gt" name="hesai_gt" type="hesai_gt_node" output="screen" >
+		<param name="pcap_file" type="string" value="$(arg pcap_file)"/>
+		<param name="server_ip" type="string" value="$(arg server_ip)"/>
+		<param name="server_port"  type="int" value="$(arg server_port)"/>
+		<param name="lidar_recv_port"  type="int" value="$(arg lidar_recv_port)"/>
+		<param name="gps_port"  type="int" value="$(arg gps_port)"/>
+		<param name="lidar_correction_file"  type="string" value="$(arg lidar_correction_file)"/>
+		<param name="channel_count"  type="int" value="$(arg channel_count)"/>
+	</node>
+</launch>

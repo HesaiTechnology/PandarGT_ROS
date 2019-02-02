@@ -1,0 +1,2 @@
+/usr/bin/ar qc libHesai_GT.a  CMakeFiles/Hesai_GT.dir/src/input.cc.o CMakeFiles/Hesai_GT.dir/src/hesai_gt_internal.cc.o CMakeFiles/Hesai_GT.dir/src/hesai_gt.cc.o
+/usr/bin/ranlib libHesai_GT.a
