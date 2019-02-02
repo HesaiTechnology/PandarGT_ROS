@@ -454,7 +454,7 @@ void HesaiGT_Internal::CalcPointXYZIT(HesaiGTPacket *pkt, int unitId, \
         coefZ * sin_install_);
     point.z            = distance * (coefY * sin_install_ + \
         coefZ * cos_install_);
-    point.reflectivity = pkt->unitSet[index].reflectivity;
+    point.intensity= pkt->unitSet[index].reflectivity;
     point.timestamp    = unix_second + pkt->usec / SEC_TO_USEC;
     point.ring         = channelId;
 

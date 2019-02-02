@@ -1,5 +1,5 @@
 <launch>
-	<arg name="pcap_file"  default="/home/hesai/1.pcap"/>
+	<arg name="pcap_file"  default=""/>
 	<arg name="server_ip" default=""/>
 	<arg name="server_port"  default="9870"/>
 	<arg name="lidar_recv_port"  default="2368"/>
