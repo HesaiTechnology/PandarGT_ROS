@@ -38,7 +38,7 @@ public:
     }
     else if(serverIp.empty())
     {
-      hsdk = new HesaiGT("192.168.1.201", lidarRecvPort, \
+      hsdk = new HesaiGT(serverIp, lidarRecvPort, \
           boost::bind(&HesaiGTClient::lidarCallback, this, _1, _2),
           0, std::string("hesaiGT"));
     }
