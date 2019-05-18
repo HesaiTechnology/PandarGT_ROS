@@ -378,7 +378,7 @@ void HesaiGT_Internal::PushLiDARData(DataPacket packet) {
 
 int HesaiGT_Internal::ParseRawData(HesaiGTPacket *packet, const uint8_t *buf, \
     const int len) {
-  if (NULL == buf || NULL == buf + len) {
+  if (NULL == buf) {
     return -1;
   }
 
@@ -412,9 +412,9 @@ int HesaiGT_Internal::ParseRawData(HesaiGTPacket *packet, const uint8_t *buf, \
   packet->t.tm_isdst = 0;
 
   packet->usec = (tail[UTC_TIME_SIZE] & 0xff) | \
-      (buf[UTC_TIME_SIZE+1] & 0xff) << 8 | \
-      ((buf[UTC_TIME_SIZE+2] & 0xff) << 16) | \
-      ((buf[UTC_TIME_SIZE+3] & 0xff) << 24);
+      (tail[UTC_TIME_SIZE+1] & 0xff) << 8 | \
+      ((tail[UTC_TIME_SIZE+2] & 0xff) << 16) | \
+      ((tail[UTC_TIME_SIZE+3] & 0xff) << 24);
 
   return 0;
 }
