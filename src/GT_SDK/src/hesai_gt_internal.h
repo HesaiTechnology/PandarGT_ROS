@@ -48,6 +48,7 @@
 #define TEMP_SIZE         (2)
 #define TAIL_SIZE         (UTC_TIME_SIZE + FINE_TIME_SIZE + TEMP_NUM * \
     TEMP_SIZE)
+#define FRAME_COUNT       (1000)
 
 struct HesaiGTUnit_s {
   float    horizon;
@@ -92,7 +93,7 @@ class HesaiGT_Internal {
    */
   HesaiGT_Internal(
       std::string device_ip, uint16_t lidar_port, \
-      boost::function<void(boost::shared_ptr<PPointCloud>, float)> \
+      boost::function<void(boost::shared_ptr<PPointCloud>, double)> \
       pcl_callback, int tz, std::string frame_id);
   /**
    * @brief Constructor
@@ -103,7 +104,7 @@ class HesaiGT_Internal {
    */
   HesaiGT_Internal(
       std::string pcap_path, \
-      boost::function<void(boost::shared_ptr<PPointCloud>, float)> \
+      boost::function<void(boost::shared_ptr<PPointCloud>, double)> \
       pcl_callback, int tz, std::string frame_id);
   ~HesaiGT_Internal();
 
@@ -145,7 +146,7 @@ class HesaiGT_Internal {
   float                          cos_install_;
   float                          sin_install_;
 
-  boost::function<void(boost::shared_ptr<PPointCloud> cld, float timestamp)> \
+  boost::function<void(boost::shared_ptr<PPointCloud> cld, double timestamp)> \
       pcl_callback_;
 };
 

@@ -21,7 +21,7 @@ void lidarCallback(boost::shared_ptr<PPointCloud> cld, double timestamp) {
 }
 
 int main(int argc, char** argv) {
-  HesaiGT hesaiGT(std::string("192.168.1.201"), 2368, lidarCallback, \
+  HesaiGT hesaiGT(std::string("192.168.20.51"), 8080, lidarCallback, \
       0, std::string("hesai_gt"));
   hesaiGT.Start();
 

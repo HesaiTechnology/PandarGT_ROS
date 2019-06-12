@@ -128,7 +128,7 @@ int Input::getPacket(DataPacket *pkt) {
   if ((fds[0].revents & POLLERR) || (fds[0].revents & POLLHUP) ||
       (fds[0].revents & POLLNVAL)) {
     // device error?
-    perror("poll() reports Pandar error");
+    perror("poll() reports error");
     return -1;
   }
 

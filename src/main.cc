@@ -29,17 +29,14 @@ public:
     nh.getParam("lidar_recv_port", lidarRecvPort);
     nh.getParam("lidar_correction_file", lidarCorrectionFile);
     nh.getParam("channel_count", channelCount);
-
-    if(!pcapFile.empty())
-    {
+    if(!pcapFile.empty()) {
       hsdk = new HesaiGT(pcapFile, \
           boost::bind(&HesaiGTClient::lidarCallback, this, _1, _2),
           0, std::string("hesaiGT"));
     }
-    else if(serverIp.empty())
-    {
+    else {
       hsdk = new HesaiGT(serverIp, lidarRecvPort, \
-          boost::bind(&HesaiGTClient::lidarCallback, this, _1, _2),
+          boost::bind(&HesaiGTClient::lidarCallback, this, _1, _2), \
           0, std::string("hesaiGT"));
     }
 
@@ -60,8 +57,7 @@ private:
   HesaiGT        *hsdk;
 };
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "hesai_GT_ros");
   ros::NodeHandle nh("~");
   ros::NodeHandle node;

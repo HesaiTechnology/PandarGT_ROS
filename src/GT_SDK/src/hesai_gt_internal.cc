@@ -35,7 +35,7 @@ double degreeToRadian(double degree) { return degree * M_PI / 180; }
 
 HesaiGT_Internal::HesaiGT_Internal(
     std::string device_ip, uint16_t lidar_port,
-    boost::function<void(boost::shared_ptr<PPointCloud>, float)> pcl_callback, \
+    boost::function<void(boost::shared_ptr<PPointCloud>, double)> pcl_callback, \
     int tz, std::string frame_id) {
   pthread_mutex_init(&lidar_lock_, NULL);
   sem_init(&lidar_sem_, 0, 0);
@@ -58,7 +58,7 @@ HesaiGT_Internal::HesaiGT_Internal(
 
 HesaiGT_Internal::HesaiGT_Internal(
       std::string pcap_path, \
-      boost::function<void(boost::shared_ptr<PPointCloud>, float)> \
+      boost::function<void(boost::shared_ptr<PPointCloud>, double)> \
       pcl_callback, int tz, std::string frame_id) {
   pthread_mutex_init(&lidar_lock_, NULL);
   sem_init(&lidar_sem_, 0, 0);
@@ -104,6 +104,8 @@ int HesaiGT_Internal::LoadCorrectionFile(std::string correction_content) {
     int   lineId;
     float gama;
     float theta;
+
+    std::cout << line << std::endl;
 
     std::stringstream ss(line);
     std::string subline;
@@ -223,6 +225,7 @@ void HesaiGT_Internal::ProcessLiarPacket() {
   float           minInOneSec       = 0.0f;
   bool            reachMaxOnce      = false;
   bool            reachMaxTwice     = false;
+  int             pktCount          = 0;
 
   boost::shared_ptr<PPointCloud> outMsg(new PPointCloud());
 
@@ -243,6 +246,7 @@ void HesaiGT_Internal::ProcessLiarPacket() {
           foundCutAngle   = false;
           reachMaxOnce    = false;
           reachMaxTwice   = false;
+          pktCount        = 0;
         }
       }
 
@@ -255,6 +259,7 @@ void HesaiGT_Internal::ProcessLiarPacket() {
     DataPacket packet = lidar_packets_.front();
     lidar_packets_.pop_front();
     pthread_mutex_unlock(&lidar_lock_);
+    pktCount++;
 
     HesaiGTPacket pkt;
     uint8_t       unitNum  = packet.data[SOB_SIZE+LASER_NUM_SIZE];
@@ -291,15 +296,17 @@ void HesaiGT_Internal::ProcessLiarPacket() {
     }
 
     if (!recvDataFlag) {
-      firstPktTime = mktime(&pkt.t) + pkt.usec / SEC_TO_USEC;
+      firstPktTime = mktime(&pkt.t) + static_cast<double>(pkt.usec) / SEC_TO_USEC;
       recvDataFlag = true;
       findMaxAndMinAngle(maxInOneSec, minInOneSec, pkt);
 
       continue;
     } else {
-      if (mktime(&pkt.t) + pkt.usec /SEC_TO_USEC - firstPktTime > 1.0) {
+      if (mktime(&pkt.t) + static_cast<double>(pkt.usec) /SEC_TO_USEC - firstPktTime > 1.0 || \
+          pktCount >= FRAME_COUNT) {
         foundCutAngle = true;
-        firstPktTime  = mktime(&pkt.t) + pkt.usec / SEC_TO_USEC;
+        firstPktTime  = mktime(&pkt.t) + static_cast<double>(pkt.usec) / SEC_TO_USEC;
+        pktCount = 0;
         max_angle_    = maxInOneSec - 0.2f;
         min_angle_    = minInOneSec + 0.2f;
       } else {
@@ -385,36 +392,38 @@ int HesaiGT_Internal::ParseRawData(HesaiGTPacket *packet, const uint8_t *buf, \
   uint8_t       laserNum     = buf[SOB_SIZE];
   uint8_t       unitNum      = buf[SOB_SIZE+LASER_NUM_SIZE];
   const uint8_t *channelData = buf + HEADER_SIZE;
+  int           index        = HEADER_SIZE;
 
   for (int i = 0; i < packet->laserNum * packet->unitNum; i++) {
-    packet->unitSet[i].horizon      = static_cast<float>(channelData[6] | \
-        (static_cast<uint16_t>(channelData[5]) << 8)) / 1024.0f - 32.0f;
-    packet->unitSet[i].vertical     = static_cast<float>(channelData[4] | \
-        (static_cast<uint16_t>(channelData[3]) << 8)) / 1024.0f - 32.0f;
-    packet->unitSet[i].distance     = channelData[2] | \
-        (static_cast<uint16_t>(channelData[1]) << 8);
-    packet->unitSet[i].reflectivity = channelData[0];
+    packet->unitSet[i].horizon      = static_cast<float>(buf[index+6] | \
+        (static_cast<uint16_t>(buf[index+5]) << 8)) / 1024.0f - 32.0f;
+    packet->unitSet[i].vertical     = static_cast<float>(buf[index+4] | \
+        (static_cast<uint16_t>(buf[index+3]) << 8)) / 1024.0f - 32.0f;
+    packet->unitSet[i].distance     = buf[index+2] | \
+        (static_cast<uint16_t>(buf[index+1]) << 8);
+    packet->unitSet[i].reflectivity = buf[index+0];
 
-    channelData += CHANNEL_UNIT_SIZE;
+    index += CHANNEL_UNIT_SIZE;
   }
 
-  const uint8_t *tail = channelData;
 
-  packet->t.tm_sec   = (tail[0] & 0xff);
-  packet->t.tm_min   = (tail[1] & 0xff);
-  packet->t.tm_hour  = (tail[2] & 0xff);
-  packet->t.tm_mday  = (tail[3] & 0xff);
-  // UTC's month start from 1, but mktime only accept month from 0.
-  packet->t.tm_mon   = (tail[4] & 0xff) - 1;
   // UTC's year only include 0 - 99 year , which indicate 2000 to 2099.
   // and mktime's year start from 1900 which is 0. so we need add 100 year.
-  packet->t.tm_year  = (tail[5] & 0xff) + 100;
+  packet->t.tm_year  = (buf[index+0] & 0xff) + 100;
+  // UTC's month start from 1, but mktime only accept month from 0.
+  packet->t.tm_mon   = (buf[index+1] & 0xff) - 1;
+  packet->t.tm_mday  = (buf[index+2] & 0xff);
+  packet->t.tm_hour  = (buf[index+3] & 0xff);
+  packet->t.tm_min   = (buf[index+4] & 0xff);
+  packet->t.tm_sec   = (buf[index+5] & 0xff);
   packet->t.tm_isdst = 0;
 
-  packet->usec = (tail[UTC_TIME_SIZE] & 0xff) | \
-      (tail[UTC_TIME_SIZE+1] & 0xff) << 8 | \
-      ((tail[UTC_TIME_SIZE+2] & 0xff) << 16) | \
-      ((tail[UTC_TIME_SIZE+3] & 0xff) << 24);
+  index += UTC_TIME_SIZE;
+
+  packet->usec = (buf[index] & 0xff) | \
+      (buf[index+1] & 0xff) << 8 | \
+      ((buf[index+2] & 0xff) << 16) | \
+      ((buf[index+3] & 0xff) << 24);
 
   return 0;
 }
@@ -455,7 +464,7 @@ void HesaiGT_Internal::CalcPointXYZIT(HesaiGTPacket *pkt, int unitId, \
     point.z            = distance * (coefY * sin_install_ + \
         coefZ * cos_install_);
     point.intensity= pkt->unitSet[index].reflectivity;
-    point.timestamp    = unix_second + pkt->usec / SEC_TO_USEC;
+    point.timestamp    = unix_second + static_cast<double>(pkt->usec) / SEC_TO_USEC;
     point.ring         = channelId;
 
     cld->push_back(point);
