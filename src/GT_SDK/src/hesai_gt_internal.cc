@@ -434,40 +434,40 @@ void HesaiGT_Internal::CalcPointXYZIT(HesaiGTPacket *pkt, int unitId, \
       static_cast<double>(mktime(&pkt->t) + tz_second_);
   uint8_t index = unitId * pkt->laserNum + channelId;
 
-  for (uint8_t j = 0; j < pkt->laserNum; j++) {
-    float distance    = pkt->unitSet[index].distance * \
-        pkt->disUnit / METER_TO_MILLIMETER;
-    if (distance < 0.5f) {
-      continue;
-    }
-    float horizon     = pkt->unitSet[index].horizon;
-    float vertical    = pkt->unitSet[index].vertical;
-    float sinHorizon  = sinf(ANGLE_TO_RADIAN(horizon));
-    float cosHorizon  = cosf(ANGLE_TO_RADIAN(horizon));
-    float sinVertical = sinf(ANGLE_TO_RADIAN(vertical));
-    float cosVertical = cosf(ANGLE_TO_RADIAN(vertical));
-    float coef        = \
-        -cosVertical * sinHorizon * coef_channels_[channelId].coefX + \
-        cosVertical * cosHorizon * coef_channels_[channelId].coefY + \
-        sinVertical * coef_channels_[channelId].coefZ;
-    float coefX       = coef_channels_[channelId].coefX + \
-        2 * cosVertical * sinHorizon * coef;
-    float coefY       = coef_channels_[channelId].coefY - \
-        2 * cosVertical * cosHorizon * coef;
-    float coefZ       = coef_channels_[channelId].coefZ - \
-        2 * sinVertical * coef;
+  float distance    = pkt->unitSet[index].distance * \
+      pkt->disUnit / METER_TO_MILLIMETER;
 
-    PPoint point;
-    point.x            = distance * coefX;
-    point.y            = distance * (coefY * cos_install_ - \
-        coefZ * sin_install_);
-    point.z            = distance * (coefY * sin_install_ + \
-        coefZ * cos_install_);
-    point.intensity= pkt->unitSet[index].reflectivity;
-    point.timestamp    = unix_second + static_cast<double>(pkt->usec) / SEC_TO_USEC;
-    point.ring         = channelId;
-
-    cld->push_back(point);
+  if (distance < 0.5f) {
+    return;
   }
+
+  float horizon     = pkt->unitSet[index].horizon / 2.0f;
+  float vertical    = pkt->unitSet[index].vertical / 2.0f;
+  float sinHorizon  = sinf(ANGLE_TO_RADIAN(horizon));
+  float cosHorizon  = cosf(ANGLE_TO_RADIAN(horizon));
+  float sinVertical = sinf(ANGLE_TO_RADIAN(vertical));
+  float cosVertical = cosf(ANGLE_TO_RADIAN(vertical));
+  float coef        = \
+      -cosVertical * sinHorizon * coef_channels_[channelId].coefX + \
+      cosVertical * cosHorizon * coef_channels_[channelId].coefY + \
+      sinVertical * coef_channels_[channelId].coefZ;
+  float coefX       = coef_channels_[channelId].coefX + \
+      2 * cosVertical * sinHorizon * coef;
+  float coefY       = coef_channels_[channelId].coefY - \
+      2 * cosVertical * cosHorizon * coef;
+  float coefZ       = coef_channels_[channelId].coefZ - \
+      2 * sinVertical * coef;
+
+  PPoint point;
+  point.x            = distance * coefX;
+  point.y            = distance * (coefY * cos_install_ - \
+      coefZ * sin_install_);
+  point.z            = distance * (coefY * sin_install_ + \
+      coefZ * cos_install_);
+  point.intensity= pkt->unitSet[index].reflectivity;
+  point.timestamp    = unix_second + static_cast<double>(pkt->usec) / SEC_TO_USEC;
+  point.ring         = channelId;
+
+  cld->push_back(point);
 }
 
