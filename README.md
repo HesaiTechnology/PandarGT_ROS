@@ -1,9 +1,9 @@
-# HesaiGT_ROS
+# PandarGT_ROS
 ### Check
 ```
 mkdir -p <ros_workspace>/src
 cd <ros_workspace>/src
-git clone https://github.com/HesaiTechnology/HesaiGT_ROS.git
+git clone https://github.com/HesaiTechnology/PandarGT_ROS.git
 ```
 
 ### Build
